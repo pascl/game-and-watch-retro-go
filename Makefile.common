@@ -235,7 +235,7 @@ endef
 $(eval $(foreach obj,$(SDK_C_SOURCES) $(SDK_ASM_SOURCES),$(call sdk_obj_prereq_gen,$(obj))))
 
 Core/Inc/githash.h:
-	./githash.sh > $@
+	./githash.sh $@
 .PHONY: Core/Inc/githash.h
 
 Core/Src/main.c: Core/Inc/githash.h
