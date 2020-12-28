@@ -166,7 +166,8 @@ C_DEFS +=  \
 -DVECT_TAB_ITCM \
 -DIS_LITTLE_ENDIAN \
 -D_FORTIFY_SOURCE=1 \
--DDEBUG_RG_ALLOC
+-DDEBUG_RG_ALLOC \
+-DLARGE_FLASH=1
 
 # AS includes
 AS_INCLUDES +=
@@ -207,7 +208,8 @@ LDSCRIPT ?= STM32H7B0VBTx_FLASH.ld
 # libraries
 LIBS = -lc -lm -lnosys
 LIBDIR +=
-LDFLAGS += $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+# LDFLAGS += $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS += $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref,--defsym=LARGE_FLASH=1 -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET)_extflash.bin
@@ -268,7 +270,7 @@ $(BUILD_DIR):
 # Flashing
 #######################################
 
-OPENOCD ?= openocd
+OPENOCD ?= "/opt/openocd-git/bin/openocd"
 OCDIFACE ?= interface/stlink.cfg
 TRANSPORT ?= hla_swd
 
