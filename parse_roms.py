@@ -28,7 +28,7 @@ const rom_system_t {name} = {{
 
 class ROM:
     def __init__(self, system_name: str, filepath: str):
-        self.name = (os.path.splitext(os.path.basename(filepath))[0])
+        self.name = (os.path.splitext(os.path.basename(filepath))[0]).split("[")[0].strip()
         self.path = filepath
         self.size = os.path.getsize(filepath)
 
@@ -84,11 +84,11 @@ class ROMParser():
         template = "const uint8_t {name}[]  __attribute__((section (\".extflash_game_rom\"))) = {{\n"
         char_array = template.format(name=name)
         while True:
-            current_data = rom_data[:8]
+            current_data = rom_data[:16]
             char_array += "\t"
             for b in current_data:
-                char_array += hex(b) + ", "
-            rom_data = rom_data[8:]
+                char_array += hex(b) + ","
+            rom_data = rom_data[16:]
             char_array += "\n"
             if(len(rom_data) == 0):
                 break
@@ -100,8 +100,8 @@ class ROMParser():
     def generate_save_entry(self, name: str, save_size: int) -> str:
         return f"uint8_t {name}[{save_size}]  __attribute__((section (\".saveflash\")));\n"
 
-    def generate_system(self, file: str, system_name: str, variable_name: str, extension: str, data_prefix: str, save_prefix: str) -> int:
-        f = open(file, "w")
+    def generate_system(self, file: str, system_name: str, variable_name: str, extension: str, data_prefix: str, save_prefix: str, split_count: int) -> int:
+        count = 0
         roms = self.find_roms(system_name, extension, extension)
 
         if extension == "gb":
@@ -110,16 +110,32 @@ class ROMParser():
             save_size = 64 * 1024
         else:
             save_size = 0
-
+        
+        f = None
         for i in range(len(roms)):
+            if i%split_count == 0 :
+                if i > 0 :
+                    f.close()
+                myfile = file + extension + "_roms" + str(count) + ".c"
+                f = open(myfile, "w")
+                count = count + 1
             rom = roms[i]
             f.write(self.generate_char_array(data_prefix + str(i), rom))
             f.write(self.generate_save_entry(save_prefix + str(i), save_size))
 
+        f.close()
+        myfile = file + extension + "_roms" + str(count) + ".c"
+        f = open(myfile, "w")
         rom_entries = self.generate_rom_entries(extension + "_roms", roms, data_prefix, save_prefix)
         f.write(rom_entries)
 
         f.write(SYSTEM_TEMPLATE.format(name=variable_name, system_name=system_name, variable_name=extension + "_roms", extension =extension))
+        f.close()
+        
+        myfile = file + extension + "_roms" + ".c"
+        f = open(myfile, "w")
+        for i in range(count+1):
+            f.write("#include \"" + extension + "_roms" + str(i) + ".c\"\n")
         f.close()
 
         return len(roms) * save_size
@@ -133,8 +149,8 @@ class ROMParser():
 
     def parse(self):
         save_size = 0
-        save_size += self.generate_system("Core/Src/retro-go/gb_roms.c", "Nintendo Gameboy", "gb_system", "gb", "ROM_GB_", "SAVE_GB_")
-        save_size += self.generate_system("Core/Src/retro-go/nes_roms.c", "Nintendo Entertainment System", "nes_system", "nes", "ROM_NES_", "SAVE_NES_")
+        save_size += self.generate_system("Core/Src/retro-go/", "Nintendo Gameboy", "gb_system", "gb", "ROM_GB_", "SAVE_GB_", 4)
+        save_size += self.generate_system("Core/Src/retro-go/", "Nintendo Entertainment System", "nes_system", "nes", "ROM_NES_", "SAVE_NES_", 8)
 
         self.generate_saveflash("saveflash.ld", save_size)
 
