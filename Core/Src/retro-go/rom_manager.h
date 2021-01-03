@@ -31,3 +31,7 @@ extern retro_emulator_file_t *ACTIVE_FILE;
 
 const rom_system_t *rom_manager_system(const rom_manager_t *mgr, char *name);
 void rom_manager_set_active_file(retro_emulator_file_t *file);
+
+#include "gb_roms.h"
+#include "nes_roms.h"
+

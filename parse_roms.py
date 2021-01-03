@@ -112,18 +112,29 @@ class ROMParser():
             save_size = 0
         
         f = None
+        f1 = open(file + extension + "_roms.h", "w")
+        f2 = open("Make" + extension, "w")
+        f1.write("#pragma once\n")
+        f1.write("#include <stdint.h>\n")
+        f2.write("C_SOURCES += \\\n")
         for i in range(len(roms)):
             if i%split_count == 0 :
                 if i > 0 :
                     f.close()
                 myfile = file + extension + "_roms" + str(count) + ".c"
+                f2.write(myfile + " \\\n")
                 f = open(myfile, "w")
                 count = count + 1
             rom = roms[i]
+            f.write("#include <stdint.h>\n")
             f.write(self.generate_char_array(data_prefix + str(i), rom))
             f.write(self.generate_save_entry(save_prefix + str(i), save_size))
+            f1.write("extern const uint8_t " + data_prefix + str(i) + "[];\n")
+            f1.write("extern uint8_t " + save_prefix + str(i) + "[" + str(save_size) + "];\n")
 
         f.close()
+        f1.close()
+        f2.close()
         myfile = file + extension + "_roms" + str(count) + ".c"
         f = open(myfile, "w")
         rom_entries = self.generate_rom_entries(extension + "_roms", roms, data_prefix, save_prefix)
@@ -134,8 +145,9 @@ class ROMParser():
         
         myfile = file + extension + "_roms" + ".c"
         f = open(myfile, "w")
-        for i in range(count+1):
-            f.write("#include \"" + extension + "_roms" + str(i) + ".c\"\n")
+        f.write("#include <stdint.h>\n")
+        f.write("#include \"rom_manager.h\"\n")
+        f.write("#include \"" + extension + "_roms" + str(count) + ".c\"\n")
         f.close()
 
         return len(roms) * save_size
